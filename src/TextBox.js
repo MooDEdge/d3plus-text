@@ -15,6 +15,7 @@ import strip from "./strip";
 import textSplit from "./textSplit";
 import measure from "./textWidth";
 import wrap from "./textWrap";
+import truncateWord from "./textTruncate";
 import {trimRight} from "./trim";
 
 /**
@@ -58,6 +59,7 @@ export default class TextBox extends BaseClass {
     this._split = textSplit;
     this._text = accessor("text");
     this._textAnchor = constant("start");
+    this._truncateWord = constant(false);
     this._verticalAlign = constant("top");
     this._width = accessor("width", 200);
     this._x = accessor("x", 0);
@@ -124,7 +126,12 @@ export default class TextBox extends BaseClass {
       */
       function checkSize() {
         const truncate = () => {
-          if (line < 1) lineData = [that._ellipsis("", line)];
+          if (line < 1) {
+            if (this._truncateWord) {
+              lineData = [truncateWord(wrapResults.words[0], that._ellipsis("", line), w, style)];
+            }
+            else lineData = [that._ellipsis("", line)];
+          }
           else lineData[line - 1] = that._ellipsis(lineData[line - 1], line);
         };
 
@@ -272,9 +279,9 @@ export default class TextBox extends BaseClass {
             .attr("font-weight", d.fW)
             .style("font-weight", d.fW)
             .attr("x", `${d.tA === "middle" ? d.w / 2 : rtl ? d.tA === "start" ? d.w : 0 : d.tA === "end" ? d.w : 2 * Math.sin(Math.PI * d.r / 180)}px`)
-            .attr("y", (t, i) => d.r === 0 || d.vA === "top" ? `${(i + 1) * d.lH - (d.lH - d.fS)}px` 
-            : d.vA === "middle" 
-              ? `${(d.h + d.fS) / 2 - (d.lH - d.fS) + (i - d.lines.length / 2 + 0.5) * d.lH}px` 
+            .attr("y", (t, i) => d.r === 0 || d.vA === "top" ? `${(i + 1) * d.lH - (d.lH - d.fS)}px`
+            : d.vA === "middle"
+              ? `${(d.h + d.fS) / 2 - (d.lH - d.fS) + (i - d.lines.length / 2 + 0.5) * d.lH}px`
               : `${d.h - 2 * (d.lH - d.fS) - (d.lines.length - (i + 1)) * d.lH + 2 * Math.cos(Math.PI * d.r / 180)}px`);
 
         }
@@ -338,8 +345,8 @@ export default class TextBox extends BaseClass {
       @chainable
   */
   ariaHidden(_) {
-    return _ !== undefined 
-      ? (this._ariaHidden = typeof _ === "function" ? _ : constant(_), this) 
+    return _ !== undefined
+      ? (this._ariaHidden = typeof _ === "function" ? _ : constant(_), this)
       : this._ariaHidden;
   }
 
@@ -607,6 +614,16 @@ function(d) {
   */
   textAnchor(_) {
     return arguments.length ? (this._textAnchor = typeof _ === "function" ? _ : constant(_), this) : this._textAnchor;
+  }
+
+  /**
+      @memberof TextBox
+      @desc Controls whether or not truncation can happen in the middle of a word
+      @param {Function|Boolean} [*value* = "false"]
+      @chainable
+  */
+  truncateWord(_) {
+    return arguments.length ? (this._truncateWord = typeof _ === "function" ? _ : constant(_), this) : this._truncateWord;
   }
 
   /**
